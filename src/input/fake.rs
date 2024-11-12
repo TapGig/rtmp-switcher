@@ -15,10 +15,10 @@ pub struct Fake {
 impl Fake {
     pub fn create(config: Config) -> Result<Self> {
         let audio = gst_create_element("fakesrc", &format!("input_{}_audio_src", config.name))?;
-        audio.set_property("is-live", &true)?;
+        audio.set_property("is-live", &true);
 
         let video = gst_create_element("fakesrc", &format!("input_{}_video_src", config.name))?;
-        video.set_property("is-live", &true)?;
+        video.set_property("is-live", &true);
 
         Ok(Fake {
             name: config.name.to_string(),
@@ -75,7 +75,7 @@ impl Fake {
         super::set_peer_pad_property(
             &self
                 .video
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| MixerError::Gstreamer("failed to retrieve src pad".to_string()))?,
             "zorder",
             &zorder,

@@ -61,7 +61,7 @@ impl File {
                     .to_string(),
             )
             .build();
-        video_capsfilter.set_property("caps", &video_caps)?;
+        video_capsfilter.set_property("caps", &video_caps);
 
         let video_encoder = gst_create_element(
             &config.encoder.video.encoder.to_string(),
@@ -84,7 +84,7 @@ impl File {
         let queue_sink = gst_create_element("queue", &format!("output_{}_rtmp_queuesink", name))?;
         let video_sink = gst_create_element("filesink", &format!("output_{}_file_sink", name))?;
         // TODO: Configure recording directory, also use timestamp
-        video_sink.set_property("location", &location)?;
+        video_sink.set_property("location", &location);
 
         // Audio stream
         let audio_queue = gst_create_element("queue", &format!("output_{}_audio_queue", name))?;

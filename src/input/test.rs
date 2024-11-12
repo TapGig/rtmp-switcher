@@ -28,7 +28,7 @@ impl Test {
             &format!("input_{}_videotestsrc", config.name),
         )?;
         video.set_property_from_str("pattern", "black");
-        video.set_property("is-live", &true)?;
+        video.set_property("is-live", &true);
 
         let video_convert = gst_create_element(
             "videoconvert",
@@ -48,14 +48,14 @@ impl Test {
             .field("height", &config.video.height)
             .field("format", &config.video.format.to_string())
             .build();
-        video_capsfilter.set_property("caps", &video_caps)?;
+        video_capsfilter.set_property("caps", &video_caps);
 
         let audio = gst_create_element(
             "audiotestsrc",
             &format!("input_{}_audiotestsrc", config.name),
         )?;
-        audio.set_property("volume", &config.audio.volume)?;
-        audio.set_property("is-live", &true)?;
+        audio.set_property("volume", &config.audio.volume);
+        audio.set_property("is-live", &true);
         let audio_queue =
             gst_create_element("queue", &format!("input_{}_audio_queue", config.name))?;
         let audio_convert = gst_create_element(
@@ -170,7 +170,7 @@ impl Test {
         super::set_peer_pad_property(
             &self
                 .video_capsfilter
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| MixerError::Gstreamer("Failed to get static src pad".to_string()))?,
             "zorder",
             &zorder,

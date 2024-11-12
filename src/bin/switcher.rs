@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{Command, Arg};
 use gstreamer as gst;
 use std::net::SocketAddr;
 use switcher::http::Server;
@@ -17,21 +17,20 @@ enum RTMPSwitcherError {
 async fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt::init();
 
-    let matches = App::new("rtmpswitcher")
+    let matches = Command::new("rtmpswitcher")
         .version("0.1.0")
         .about("It switches things")
         .arg(
-            Arg::with_name("addr")
-                .short("a")
+            Arg::new("addr")
+                .short('a')
                 .long("addr")
                 .value_name("ADDRESS")
-                .help("sets the server listen address")
-                .takes_value(true),
+                .help("sets the server listen address"),
         )
         .get_matches();
-    let addr: SocketAddr = parse_addr(matches.value_of("addr").unwrap_or({
+    let addr: SocketAddr = parse_addr(matches.get_one::<String>("addr").unwrap_or({
         eprintln!("using 0.0.0.0:3030 as addr");
-        "0.0.0.0:3030"
+        &String::from("0.0.0.0:3030")
     }))?;
 
     gst::init().map_err(RTMPSwitcherError::FailedInitGstreamer)?;

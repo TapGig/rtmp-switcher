@@ -62,7 +62,7 @@ impl RTMP {
                     .to_string(),
             )
             .build();
-        video_capsfilter.set_property("caps", &video_caps)?;
+        video_capsfilter.set_property("caps", &video_caps);
 
         let x264enc = gst_create_element(
             &config.encoder.video.encoder.to_string(),
@@ -78,7 +78,7 @@ impl RTMP {
 
         let queue_sink = gst_create_element("queue", &format!("output_{}_rtmp_queuesink", name))?;
         let video_sink = gst_create_element("rtmpsink", &format!("output_{}_rtmp_sink", name))?;
-        video_sink.set_property("location", &uri)?;
+        video_sink.set_property("location", &uri);
 
         // Audio stream
         let audio_queue = gst_create_element("queue", &format!("output_{}_audio_queue", name))?;

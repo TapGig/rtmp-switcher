@@ -158,23 +158,23 @@ impl Input {
 
 fn set_peer_pad_property(pad: &gst::Pad, property: &str, value: &dyn ToValue) -> Result<()> {
     let peer_pad = pad
-        .get_peer()
+        .peer()
         .ok_or_else(|| MixerError::Gstreamer("Could not retrieve peer pad".to_string()))?;
 
-    peer_pad.set_property(property, value)?;
+    peer_pad.set_property(property, value);
     Ok(())
 }
 
 fn release_request_pad(elem: &gst::Element) -> Result<()> {
-    let pad = elem.get_static_pad("src").ok_or_else(|| {
+    let pad = elem.static_pad("src").ok_or_else(|| {
         MixerError::Gstreamer("Failed to get static src pad for element".to_string())
     })?;
     if pad.is_linked() {
-        let peer_pad = pad.get_peer().ok_or_else(|| {
+        let peer_pad = pad.peer().ok_or_else(|| {
             MixerError::Gstreamer("Could not retrieve peer pad for src element".to_string())
         })?;
         peer_pad
-            .get_parent_element()
+            .parent_element()
             .ok_or_else(|| {
                 MixerError::Gstreamer("Failed to get parent element for peer pad".to_string())
             })?

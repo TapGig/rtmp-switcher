@@ -43,7 +43,7 @@ impl Auto {
             .field("format", &"I420")
             .field("profile", &"high")
             .build();
-        video_capsfilter.set_property("caps", &video_caps)?;
+        video_capsfilter.set_property("caps", &video_caps);
 
         let videosink_queue =
             gst_create_element("queue", format!("output_{}_videosink_queue", name).as_str())?;

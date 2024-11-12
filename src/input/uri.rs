@@ -36,12 +36,12 @@ impl URI {
             "uridecodebin",
             &format!("input_{}_uridecodebin", config.name),
         )?;
-        source.set_property("uri", &uri)?;
+        source.set_property("uri", &uri);
 
         let video_tee_queue =
             gst_create_element("queue2", &format!("input_{}_video_tee_queue", config.name))?;
         let video_tee = gst_create_element("tee", &format!("input_{}_video_tee", config.name))?;
-        video_tee.set_property("allow-not-linked", &true)?;
+        video_tee.set_property("allow-not-linked", &true);
 
         let video_convert = gst_create_element(
             "videoconvert",
@@ -62,7 +62,7 @@ impl URI {
             "capsfilter",
             &format!("input_{}_video_capsfilter", config.name),
         )?;
-        video_capsfilter.set_property("caps", &video_caps)?;
+        video_capsfilter.set_property("caps", &video_caps);
 
         let video_queue =
             gst_create_element("queue2", &format!("input_{}_video_queue", config.name))?;
@@ -70,7 +70,7 @@ impl URI {
         let audio_tee_queue =
             gst_create_element("queue2", &format!("input_{}_audio_tee_queue", config.name))?;
         let audio_tee = gst_create_element("tee", &format!("input_{}_audio_tee", config.name))?;
-        audio_tee.set_property("allow-not-linked", &true)?;
+        audio_tee.set_property("allow-not-linked", &true);
 
         let audio_queue =
             gst_create_element("queue", &format!("input_{}_audio_queue", config.name))?;
@@ -85,7 +85,7 @@ impl URI {
 
         let audio_volume =
             gst_create_element("volume", &format!("input_{}_audio_volume", config.name))?;
-        audio_volume.set_property("volume", &config.audio.volume)?;
+        audio_volume.set_property("volume", &config.audio.volume);
 
         let audio = audio_convert.clone();
         let video = video_convert.clone();
@@ -95,23 +95,23 @@ impl URI {
         source.connect_pad_added(move |src, src_pad| {
             println!(
                 "Received new pad {} from {}",
-                src_pad.get_name(),
-                src.get_name()
+                src_pad.name(),
+                src.name()
             );
 
             let new_pad_caps = src_pad
-                .get_current_caps()
+                .current_caps()
                 .expect("Failed to get caps of new pad.");
             let new_pad_struct = new_pad_caps
-                .get_structure(0)
+                .structure(0)
                 .expect("Failed to get first structure of caps.");
-            let new_pad_type = new_pad_struct.get_name();
+            let new_pad_type = new_pad_struct.name();
 
-            let running_time = video.get_current_running_time();
+            let running_time = video.current_running_time();
 
             if new_pad_type.starts_with("audio/x-raw") {
                 let sink_pad = audio
-                    .get_static_pad("sink")
+                    .static_pad("sink")
                     .expect("Failed to get sink pad from audio mixer");
                 if sink_pad.is_linked() {
                     println!("We are already linked. Ignoring.");
@@ -121,7 +121,7 @@ impl URI {
                 // Offset src_pad by current running time. So that videos do not fast-forward to
                 // get in sync with running time of pipeline.
                 src_pad
-                    .set_offset(gst::format::GenericFormattedValue::Time(running_time).get_value());
+                    .set_offset(gst::format::GenericFormattedValue::Time(running_time).value());
 
                 let res = src_pad.link(&sink_pad);
                 if res.is_err() {
@@ -131,7 +131,7 @@ impl URI {
                 }
             } else if new_pad_type.starts_with("video/x-raw") {
                 let sink_pad = video
-                    .get_static_pad("sink")
+                    .static_pad("sink")
                     .expect("Failed to get static sink pad from video_mixer");
                 if sink_pad.is_linked() {
                     println!("We are already linked. Ignoring.");
@@ -141,9 +141,9 @@ impl URI {
                 // Offset src_pad by current running time. So that videos do not fast-forward to
                 // get in sync with running time of pipeline.
                 src_pad
-                    .set_offset(gst::format::GenericFormattedValue::Time(running_time).get_value());
+                    .set_offset(gst::format::GenericFormattedValue::Time(running_time).value());
 
-                let queue_pad = match vqueue.get_static_pad("src") {
+                let queue_pad = match vqueue.static_pad("src") {
                     Some(pad) => pad,
                     None => {
                         tracing::warn!(
@@ -154,7 +154,7 @@ impl URI {
                     }
                 };
                 if queue_pad.is_linked() {
-                    let compositor_pad = match queue_pad.get_peer() {
+                    let compositor_pad = match queue_pad.peer() {
                         Some(pad) => pad,
                         None => {
                             tracing::warn!(
@@ -302,19 +302,20 @@ impl URI {
         // highest zorder and use that for this pad. We need to determine what that zorder is
         // and store it to the config, so that if the mixer needs to temporarily change the zorder
         // it is able to restore it back to its original state.
-        let prop = self
+        let prop: u32 = self
             .video_queue
-            .get_static_pad("src")
+            .static_pad("src")
             .ok_or_else(|| {
                 mixer::Error::Gstreamer("Failed to retrieve src pad for video_queue".to_string())
             })?
-            .get_peer()
+            .peer()
             .ok_or_else(|| {
                 mixer::Error::Gstreamer("Failed to retrieve peer pad for video_queue".to_string())
             })?
-            .get_property("zorder")?;
-        let zorder = prop.downcast::<u32>().map_err(|_| mixer::Error::Unknown)?;
-        self.config.video.zorder = Some(zorder.get_some());
+            .property::<u32>("zorder");
+            // .map_err(|_| mixer::Error::Gstreamer("Failed to cast zorder property to u32".to_string()));
+        // let zorder = prop.downcast::<u32>().map_err(|_| mixer::Error::Unknown)?;
+        self.config.video.zorder = Some(prop);
 
         Ok(())
     }
@@ -363,7 +364,7 @@ impl URI {
         if update_config {
             self.config.audio.volume = volume;
         }
-        self.audio_volume.set_property("volume", &volume)?;
+        self.audio_volume.set_property("volume", &volume);
         Ok(())
     }
 
@@ -374,7 +375,7 @@ impl URI {
         super::set_peer_pad_property(
             &self
                 .video_queue
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| mixer::Error::Gstreamer("failed to retrieve src pad".to_string()))?,
             "zorder",
             &zorder,
@@ -390,7 +391,7 @@ impl URI {
         super::set_peer_pad_property(
             &self
                 .video_queue
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| mixer::Error::Gstreamer("failed to retrieve src pad".to_string()))?,
             "width",
             &width,
@@ -406,7 +407,7 @@ impl URI {
         super::set_peer_pad_property(
             &self
                 .video_queue
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| mixer::Error::Gstreamer("failed to retrieve src pad".to_string()))?,
             "height",
             &height,
@@ -422,7 +423,7 @@ impl URI {
         super::set_peer_pad_property(
             &self
                 .video_queue
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| mixer::Error::Gstreamer("failed to retrieve src pad".to_string()))?,
             "xpos",
             &xpos,
@@ -438,7 +439,7 @@ impl URI {
         super::set_peer_pad_property(
             &self
                 .video_queue
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| mixer::Error::Gstreamer("failed to retrieve src pad".to_string()))?,
             "ypos",
             &ypos,
@@ -454,7 +455,7 @@ impl URI {
         super::set_peer_pad_property(
             &self
                 .video_queue
-                .get_static_pad("src")
+                .static_pad("src")
                 .ok_or_else(|| mixer::Error::Gstreamer("failed to retrieve src pad".to_string()))?,
             "alpha",
             &alpha,

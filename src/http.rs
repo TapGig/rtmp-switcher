@@ -270,7 +270,7 @@ mod tests {
         let resp = request().method("GET").path("/mixers").reply(&api).await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]
@@ -294,7 +294,7 @@ mod tests {
             .await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]
@@ -318,7 +318,7 @@ mod tests {
             .await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]
@@ -342,7 +342,7 @@ mod tests {
             .await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]
@@ -426,7 +426,7 @@ mod tests {
             .await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]
@@ -502,7 +502,7 @@ mod tests {
             .await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]
@@ -587,7 +587,7 @@ mod tests {
             .await;
 
         assert_eq!(StatusCode::OK, resp.status());
-        assert!(resp.body().len() != 0);
+        assert_ne!(resp.body().len(), 0);
     }
 
     #[tokio::test]

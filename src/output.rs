@@ -128,15 +128,15 @@ impl Output {
 }
 
 fn release_request_pad(elem: &gst::Element) -> Result<()> {
-    let pad = elem.get_static_pad("sink").ok_or_else(|| {
+    let pad = elem.static_pad("sink").ok_or_else(|| {
         MixerError::Gstreamer("Failed to get static sink pad for element".to_string())
     })?;
     if pad.is_linked() {
-        let peer_pad = pad.get_peer().ok_or_else(|| {
+        let peer_pad = pad.peer().ok_or_else(|| {
             MixerError::Gstreamer("Could not retrieve peer pad for sink element".to_string())
         })?;
         peer_pad
-            .get_parent_element()
+            .parent_element()
             .ok_or_else(|| {
                 MixerError::Gstreamer("Failed to get parent element for peer pad".to_string())
             })?

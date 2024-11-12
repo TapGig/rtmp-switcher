@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 type Result<T> = std::result::Result<T, Error>;
 
 fn gst_create_element(element_type: &str, name: &str) -> Result<gst::Element> {
-    Ok(gst::ElementFactory::make(element_type, Some(name))
+    Ok(gst::ElementFactory::make(element_type).build()
         .map_err(|_| Error::Gstreamer(format!("Failed to create element: {}", name)))?)
 }
 

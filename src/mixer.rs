@@ -5,6 +5,7 @@ pub use error::Error;
 use gst::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+// use gst::ffi;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
@@ -34,7 +35,8 @@ impl Drop for Mixer {
 impl Mixer {
     pub fn new(config: Config) -> Result<Self> {
         let background_enabled = true;
-        let pipeline = gst::Pipeline::new(Some(config.name.as_str()));
+        let pipeline = gst::Pipeline::new();
+        //TODO pipeline.set_name(&config.name.as_str());
 
         // Create Video Channel
         let video_capsfilter = gst_create_element(
@@ -52,7 +54,7 @@ impl Mixer {
             .field("height", &config.video.height)
             .build();
 
-        video_capsfilter.set_property("caps", &video_caps)?;
+        video_capsfilter.set_property("caps", &video_caps);
 
         let video_queue = gst_create_element(
             "queue",
@@ -60,7 +62,7 @@ impl Mixer {
         )?;
         let video_tee =
             gst_create_element("tee", format!("mixer_{}_video_tee", config.name).as_str())?;
-        video_tee.set_property("allow-not-linked", &true)?;
+        video_tee.set_property("allow-not-linked", &true);
 
         pipeline.add_many(&[&video_mixer, &video_capsfilter, &video_queue, &video_tee])?;
         gst::Element::link_many(&[&video_mixer, &video_capsfilter, &video_queue, &video_tee])?;
@@ -73,7 +75,7 @@ impl Mixer {
             "volume",
             format!("mixer_{}_audio_volume", config.name).as_str(),
         )?;
-        volume.set_property("volume", &config.audio.volume)?;
+        volume.set_property("volume", &config.audio.volume);
         let audio_capsfilter = gst_create_element(
             "capsfilter",
             format!("mixer_{}_audio_capsfilter", config.name).as_str(),
@@ -83,11 +85,11 @@ impl Mixer {
             .field("layout", &"interleaved")
             .field("format", &"S32LE")
             .build();
-        audio_capsfilter.set_property("caps", &audio_caps)?;
+        audio_capsfilter.set_property("caps", &audio_caps);
 
         let audio_tee =
             gst_create_element("tee", format!("mixer_{}_audio_tee", config.name).as_str())?;
-        audio_tee.set_property("allow-not-linked", &true)?;
+        audio_tee.set_property("allow-not-linked", &true);
 
         pipeline.add_many(&[&audio_mixer, &volume, &audio_capsfilter, &audio_tee])?;
         gst::Element::link_many(&[&audio_mixer, &volume, &audio_capsfilter, &audio_tee])?;
@@ -133,7 +135,7 @@ impl Mixer {
         }
 
         // TODO: Handle pending states
-        let state = self.pipeline.get_state(gst::ClockTime::from_seconds(15)).1;
+        let state = self.pipeline.state(gst::ClockTime::from_seconds(15)).1;
         input.set_state(state)?;
         input.link(
             self.pipeline.clone(),
@@ -172,7 +174,7 @@ impl Mixer {
         }
 
         // TODO: Handle pending states
-        let state = self.pipeline.get_state(gst::ClockTime::from_seconds(15)).1;
+        let state = self.pipeline.state(gst::ClockTime::from_seconds(15)).1;
         output.set_state(state)?;
         output.link(
             self.pipeline.clone(),
@@ -269,38 +271,38 @@ impl Mixer {
 
 fn watch_bus(pipeline: gst::Pipeline) {
     // Wait until error or EOS
-    let bus = pipeline.get_bus().unwrap();
-    for msg in bus.iter_timed(gst::CLOCK_TIME_NONE) {
+    let bus = pipeline.bus().unwrap();
+    for msg in bus.iter_timed(None) { //ffi::GST_CLOCK_TIME_NONE) {
         use gst::MessageView;
         match msg.view() {
             MessageView::Error(err) => {
                 eprintln!(
                     "{}: Error received from element {:?} {}",
-                    pipeline.get_name(),
-                    err.get_src().map(|s| s.get_path_string()),
-                    err.get_error()
+                    pipeline.name(),
+                    err.src().map(|s| s.path_string()),
+                    err.error()
                 );
                 eprintln!(
                     "{}: Debugging information: {:?}",
-                    pipeline.get_name(),
-                    err.get_debug()
+                    pipeline.name(),
+                    err.debug()
                 );
                 break;
             }
             MessageView::StateChanged(state_changed) => {
                 if state_changed
-                    .get_src()
-                    .map(|s| s == pipeline)
+                    .src()
+                    .map(|s| *s == pipeline)
                     .unwrap_or(false)
                 {
                     println!(
                         "{}: Pipeline state changed from {:?} to {:?}",
-                        pipeline.get_name(),
-                        state_changed.get_old(),
-                        state_changed.get_current()
+                        pipeline.name(),
+                        state_changed.old(),
+                        state_changed.current()
                     );
 
-                    match state_changed.get_current() {
+                    match state_changed.current() {
                         gst::State::Null => break,
                         _ => continue,
                     }
